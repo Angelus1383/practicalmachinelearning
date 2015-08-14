@@ -226,8 +226,11 @@ testData &lt;- trainCleaned[-inTrain, ]</code></pre>
 <h2>Model building</h2>
 <p>We fit a predictive model for activity recognition. The algorithm chosen for this purpose is Random Forest because it is robust to correlated covariates and outliers in general. We will use a 5-fold cross validation when applying the algorithm in order to prevent overfitting.</p>
 <pre class="r"><code>rfControll &lt;- trainControl(method=&quot;cv&quot;, 5)
-rf &lt;- train(classe ~ ., data=trainData, method=&quot;rf&quot;, trControl=rfControll, ntree=250)
-print(rf)</code></pre>
+rf &lt;- train(classe ~ ., data=trainData, method=&quot;rf&quot;, trControl=rfControll, ntree=250)</code></pre>
+<pre><code>## Loading required package: randomForest
+## randomForest 4.6-10
+## Type rfNews() to see new features/changes/bug fixes.</code></pre>
+<pre class="r"><code>print(rf)</code></pre>
 <pre><code>## Random Forest 
 ## 
 ## 13737 samples
@@ -306,7 +309,7 @@ print(rf)</code></pre>
 <pre class="r"><code>oose &lt;- 1 - as.numeric(confusionMatrix(testData$classe, predictRf)$overall[1])
 oose</code></pre>
 <pre><code>## [1] 0.005607477</code></pre>
-<p>The out of sample error is the error rate that we get when we apply the classification model on new data. Using our testData, achieved by splitting the initial trainin set, we obtain a oose equals to 0.56%. Therefore, we can expect similar value also on other testing sets.</p>
+<p>The out of sample error is the error rate that we get when we apply the classification model on new data. Using our testData, achieved by splitting the initial trainin set, we obtain a oose equals to 0.56%. Therefore, we can expect similar value also on other testing sets, like the test set provided at the begining and composed by only 20 rows.</p>
 </div>
 <div id="submission-to-coursera" class="section level2">
 <h2>Submission to coursera</h2>

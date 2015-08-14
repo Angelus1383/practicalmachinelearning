@@ -84,7 +84,7 @@ Our model shows an accuracy of `r round(postResample(predictRf, testData$classe)
 oose <- 1 - as.numeric(confusionMatrix(testData$classe, predictRf)$overall[1])
 oose
 ```
-The out of sample error is the error rate that we get when we apply the classification model on new data. Using our testData, achieved by splitting the initial trainin set, we obtain a oose equals to `r round(oose*100, 2)`%. Therefore, we can expect similar value also on other testing sets.
+The out of sample error is the error rate that we get when we apply the classification model on new data. Using our testData, achieved by splitting the initial trainin set, we obtain a oose equals to `r round(oose*100, 2)`%. Therefore, we can expect similar value also on other testing sets, like the test set provided at the begining and composed by only 20 rows.
 
 ##Submission to coursera
 Below the prediction on the test set to submit on coursera.
