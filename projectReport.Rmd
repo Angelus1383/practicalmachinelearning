@@ -1,0 +1,103 @@
+---
+title: 'Practical Machine Learning Project: Fitness Data Analysis'
+author: "Valerio Capozio"
+date: "14 agosto 2015"
+output: html_document
+---
+
+##Summary
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit we can collect a large amount of data about personal activity relatively inexpensively. The goal of this project is evaluate, analyzing these data, how well people do the activities. In this project, we will use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants to predict the manner in which they did the exercise.
+
+##Reproducibility
+Below the information needed to reproduce the analysis with success.
+```{r}
+library(caret)
+set.seed(1234)
+```
+
+##Data acquisition and pre-processing
+As first step we need to acquire the data to analyze.
+```{r}
+trainUrl <-"https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+testUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+trainFile <- "./pml-training.csv"
+testFile  <- "./pml-testing.csv"
+if (!file.exists(trainFile)) {
+  download.file(trainUrl, destfile=trainFile, method="curl")
+}
+if (!file.exists(testFile)) {
+  download.file(testUrl, destfile=testFile, method="curl")
+}
+```
+Once downloaded the data we load it in memory and perform some initial exploratory analysis to better understand the data.
+```{r}
+train <- read.csv("./pml-training.csv", na.strings=c("NA","#DIV/0!",""))
+test <- read.csv("./pml-testing.csv", na.strings=c("NA","#DIV/0!",""))
+dim(train)
+dim(test)
+```
+As shown the training set is composed by `r dim(train)[1]` rows and `r dim(train)[2]` columns, whilst the test set is composed by `r dim(test)[1]` rows and `r dim(test)[2]` columns.
+More in details these are the features included in the training and test set.
+```{r}
+str(train)
+```
+###Data cleaning
+As we can see there are many variables with NA values, so as first cleaning step we remove these variables.
+```{r}
+train <- train[, colSums(is.na(train)) == 0] 
+test <- test[, colSums(is.na(test)) == 0] 
+```
+As second step we remove all variables that don't concern the accelerometer measurements because these values are out of the scope of our analysis.
+```{r}
+classe <- train$classe
+trainRemove <- grepl("^X|timestamp|window|user_name", names(train))
+train <- train[, !trainRemove]
+trainCleaned <- train[, sapply(train, is.numeric)]
+trainCleaned$classe <- classe
+testRemove <- grepl("^X|timestamp|window|user_name", names(test))
+test <- test[, !testRemove]
+testCleaned <- test[, sapply(test, is.numeric)]
+```
+At the end of the cleaning phase the train and test set are made by: `r dim(train)[1]` rows and `r dim(train)[2]` columns and `r dim(test)[1]` rows and `r dim(test)[2]` columns respectivelly.
+###Data preparation
+```{r}
+inTrain <- createDataPartition(train$classe, p=0.70, list=F)
+trainData <- trainCleaned[inTrain, ]
+testData <- trainCleaned[-inTrain, ]
+```
+##Model building
+We fit a predictive model for activity recognition. The algorithm chosen for this purpose is Random Forest because it is robust to correlated covariates and outliers in general. We will use a 5-fold cross validation when applying the algorithm in order to prevent overfitting.
+```{r cache=TRUE}
+rfControll <- trainControl(method="cv", 5)
+rf <- train(classe ~ ., data=trainData, method="rf", trControl=rfControll, ntree=250)
+print(rf)
+print(rf$finalModel)
+```
+##Model evaluation
+Once obtained the model we test its performance on the disjunct test set.
+```{r}
+predictRf <- predict(rf, testData)
+confusionMatrix(testData$classe, predictRf)
+```
+Our model shows an accuracy of `r round(postResample(predictRf, testData$classe)[1]*100, 2)`%
+```{r}
+oose <- 1 - as.numeric(confusionMatrix(testData$classe, predictRf)$overall[1])
+oose
+```
+The out of sample error is the error rate that we get when we apply the classification model on new data. Using our testData, achieved by splitting the initial trainin set, we obtain a oose equals to `r round(oose*100, 2)`%. Therefore, we can expect similar value also on other testing sets.
+
+##Submission to coursera
+Below the prediction on the test set to submit on coursera.
+
+```{r echo=FALSE}
+pml_write_files = function(x){
+  n = length(x)
+  path <- "submission_files/"
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=file.path(path, filename),quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+  x
+}
+pml_write_files(predict(rf, test))
+```
